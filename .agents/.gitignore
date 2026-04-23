@@ -1,0 +1,6 @@
+# Temporary agent artifacts
+scratch/
+tmp/
+*.log
+*.pid
+*.out

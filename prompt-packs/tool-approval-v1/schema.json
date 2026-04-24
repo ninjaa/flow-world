@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ToolApprovalGatePackOutput",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "pack_id",
+    "pack_version",
+    "provider_model",
+    "scores",
+    "tool_risk_family",
+    "approval_need_score"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "pack_id": { "type": "string" },
+    "pack_version": { "type": "string" },
+    "provider_model": { "type": "string" },
+    "scores": {
+      "type": "object",
+      "required": [
+        "destructive_action",
+        "external_side_effect",
+        "privilege_escalation_risk",
+        "secret_exposure_risk",
+        "safe_to_sandbox",
+        "user_explicit_authorization_present"
+      ],
+      "properties": {
+        "destructive_action": { "type": "number", "minimum": 0, "maximum": 1 },
+        "external_side_effect": { "type": "number", "minimum": 0, "maximum": 1 },
+        "privilege_escalation_risk": { "type": "number", "minimum": 0, "maximum": 1 },
+        "secret_exposure_risk": { "type": "number", "minimum": 0, "maximum": 1 },
+        "safe_to_sandbox": { "type": "number", "minimum": 0, "maximum": 1 },
+        "user_explicit_authorization_present": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "tool_risk_family": {
+      "type": "object",
+      "required": ["chosen", "scores"],
+      "properties": {
+        "chosen": {
+          "type": "string",
+          "enum": ["routine_safe", "sandboxable", "approval_needed", "review_needed", "blockworthy"]
+        },
+        "scores": {
+          "type": "object",
+          "required": ["routine_safe", "sandboxable", "approval_needed", "review_needed", "blockworthy"],
+          "properties": {
+            "routine_safe": { "type": "number", "minimum": 0, "maximum": 1 },
+            "sandboxable": { "type": "number", "minimum": 0, "maximum": 1 },
+            "approval_needed": { "type": "number", "minimum": 0, "maximum": 1 },
+            "review_needed": { "type": "number", "minimum": 0, "maximum": 1 },
+            "blockworthy": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        }
+      }
+    },
+    "approval_need_score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "reason_summary": { "type": "string" }
+  }
+}

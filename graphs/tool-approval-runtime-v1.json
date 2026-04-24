@@ -1,0 +1,134 @@
+{
+  "name": "tool-approval-runtime-v1",
+  "meta": {
+    "description": "Phase 1 runtime decision flow for tool-call governance."
+  },
+  "definitions": [
+    {
+      "context": "flow",
+      "category": "input",
+      "type": "flow/input/tool-proposal",
+      "description": "Provides a proposed tool call to the decision flow.",
+      "outputs": [{ "name": "proposal", "type": "ToolProposal" }]
+    },
+    {
+      "context": "flow",
+      "category": "transform",
+      "type": "flow/transform/normalize-action",
+      "description": "Normalizes a tool proposal into an action document.",
+      "inputs": [{ "name": "proposal", "type": "ToolProposal" }],
+      "outputs": [{ "name": "action_document", "type": "ActionDocument" }]
+    },
+    {
+      "context": "flow",
+      "category": "gate",
+      "type": "flow/gate/tool-approval",
+      "description": "Evaluates a tool proposal via an external gate pack and emits a route branch.",
+      "inputs": [{ "name": "action_document", "type": "ActionDocument" }],
+      "outputs": [
+        { "name": "ALLOW", "type": "ActionDocument" },
+        { "name": "SANDBOX", "type": "ActionDocument" },
+        { "name": "REQUEST_APPROVAL", "type": "ActionDocument" },
+        { "name": "REVIEW", "type": "ActionDocument" },
+        { "name": "DENY", "type": "ActionDocument" }
+      ],
+      "props": [
+        { "name": "gate_id", "type": "string", "required": true },
+        { "name": "pack_ref", "type": "string", "required": true },
+        { "name": "policy_ref", "type": "string", "required": true },
+        { "name": "fallback_route", "type": "string", "required": true }
+      ]
+    },
+    {
+      "context": "flow",
+      "category": "route",
+      "type": "flow/route/terminal",
+      "description": "Terminal node for a resolved branch.",
+      "inputs": [{ "name": "action_document", "type": "ActionDocument" }],
+      "props": [{ "name": "label", "type": "string", "required": true }]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "proposal",
+      "type": "flow/input/tool-proposal",
+      "meta": { "x": 80, "y": 240, "description": "Synthetic proposal enters the graph here." }
+    },
+    {
+      "name": "normalize_action",
+      "type": "flow/transform/normalize-action",
+      "meta": { "x": 320, "y": 240, "description": "Action document normalization step." }
+    },
+    {
+      "name": "tool_approval_gate",
+      "type": "flow/gate/tool-approval",
+      "meta": { "x": 620, "y": 240, "description": "Gate node backed by a referenced pack + deterministic route policy." },
+      "props": [
+        { "name": "gate_id", "type": "string", "value": "tool-approval-v1" },
+        { "name": "pack_ref", "type": "string", "value": "prompt-packs/tool-approval-v1" },
+        { "name": "policy_ref", "type": "string", "value": "policies/tool-approval-v1" },
+        { "name": "fallback_route", "type": "string", "value": "REVIEW" }
+      ]
+    },
+    {
+      "name": "allow_branch",
+      "type": "flow/route/terminal",
+      "meta": { "x": 960, "y": 60 },
+      "props": [{ "name": "label", "type": "string", "value": "ALLOW" }]
+    },
+    {
+      "name": "sandbox_branch",
+      "type": "flow/route/terminal",
+      "meta": { "x": 960, "y": 160 },
+      "props": [{ "name": "label", "type": "string", "value": "SANDBOX" }]
+    },
+    {
+      "name": "request_approval_branch",
+      "type": "flow/route/terminal",
+      "meta": { "x": 960, "y": 260 },
+      "props": [{ "name": "label", "type": "string", "value": "REQUEST_APPROVAL" }]
+    },
+    {
+      "name": "review_branch",
+      "type": "flow/route/terminal",
+      "meta": { "x": 960, "y": 360 },
+      "props": [{ "name": "label", "type": "string", "value": "REVIEW" }]
+    },
+    {
+      "name": "deny_branch",
+      "type": "flow/route/terminal",
+      "meta": { "x": 960, "y": 460 },
+      "props": [{ "name": "label", "type": "string", "value": "DENY" }]
+    }
+  ],
+  "edges": [
+    {
+      "src": { "node": "proposal", "port": "proposal" },
+      "dst": { "node": "normalize_action", "port": "proposal" }
+    },
+    {
+      "src": { "node": "normalize_action", "port": "action_document" },
+      "dst": { "node": "tool_approval_gate", "port": "action_document" }
+    },
+    {
+      "src": { "node": "tool_approval_gate", "port": "ALLOW" },
+      "dst": { "node": "allow_branch", "port": "action_document" }
+    },
+    {
+      "src": { "node": "tool_approval_gate", "port": "SANDBOX" },
+      "dst": { "node": "sandbox_branch", "port": "action_document" }
+    },
+    {
+      "src": { "node": "tool_approval_gate", "port": "REQUEST_APPROVAL" },
+      "dst": { "node": "request_approval_branch", "port": "action_document" }
+    },
+    {
+      "src": { "node": "tool_approval_gate", "port": "REVIEW" },
+      "dst": { "node": "review_branch", "port": "action_document" }
+    },
+    {
+      "src": { "node": "tool_approval_gate", "port": "DENY" },
+      "dst": { "node": "deny_branch", "port": "action_document" }
+    }
+  ]
+}

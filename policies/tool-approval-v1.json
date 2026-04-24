@@ -1,0 +1,32 @@
+{
+  "policy_id": "tool-approval-v1",
+  "policy_version": "1.0.0",
+  "description": "Deterministic routing policy for the phase 1 runtime decision flow.",
+  "route_order": ["DENY", "REQUEST_APPROVAL", "SANDBOX", "ALLOW", "REVIEW"],
+  "fallback_route": "REVIEW",
+  "thresholds": {
+    "deny": {
+      "secret_exposure_risk_min": 0.82,
+      "blockworthy_min": 0.75
+    },
+    "request_approval": {
+      "destructive_action_min": 0.7,
+      "privilege_escalation_risk_min": 0.75,
+      "approval_need_score_min": 0.72,
+      "approval_needed_min": 0.55
+    },
+    "sandbox": {
+      "external_side_effect_min": 0.45,
+      "safe_to_sandbox_min": 0.7,
+      "sandboxable_min": 0.5
+    },
+    "allow": {
+      "destructive_action_max": 0.25,
+      "privilege_escalation_risk_max": 0.25,
+      "external_side_effect_max": 0.35,
+      "secret_exposure_risk_max": 0.2,
+      "approval_need_score_max": 0.35,
+      "routine_safe_min": 0.5
+    }
+  }
+}

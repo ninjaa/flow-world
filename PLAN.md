@@ -1,8 +1,7 @@
 # Flow World — Repo Plan
 
 This is the **repo-level plan**.
-Use it for product direction, current phase, milestones, and open questions.
-Use `.agents/plans/<issue-or-slug>/PLAN.md` for task-level execution details.
+Use it for product direction, milestones, and current execution focus.
 
 ---
 
@@ -10,38 +9,28 @@ Use `.agents/plans/<issue-or-slug>/PLAN.md` for task-level execution details.
 
 - **Phase:** planning
 - **Last updated:** 2026-04-23
-- **Repo state:** early-stage concept repo with clarified demo direction and planning artifacts in progress
-- **Workflow choice:** use the modernized `openai-codex-exec-plan` pattern for day-to-day work
+- **Repo state:** public OSS repo with clarified two-phase direction
+- **Current execution target:** phase 1 runtime decision flow
 
 ---
 
-## Project definition
+## Product definition
 
-**Product / user outcome:**
+Flow World is an open-source demo and reference architecture for **flow-based tool-call decisions**.
 
-Flow World is an open-source demo and reference architecture for **flow-based tool gating**.
-A user talks to an agent, the agent materializes an `@fbp/types` graph, and gate nodes in that graph are backed by typed prompt-pack evaluation plus a downstream LightGBM router.
+### Phase 1
+Show a runtime decision flow where a proposed tool call moves through a graph, hits a gate node, emits gate outputs, and exits down a visible route.
 
-### First believable public demo
-
-The first public demo should show:
-
-`scripted transcript -> graph -> replay`
-
-Where:
-
-- the transcript shows the workflow being authored
-- the graph is represented in `@fbp/types`
-- the replay shows a gate node producing typed sensor outputs and routing one safe example to `ALLOW` and one risky example to `REQUEST_SUDO`
+### Phase 2
+Add graph construction UX, including graph-as-node composition built on the FBP graph model.
 
 ---
 
 ## Current goals
 
-1. Freeze the product direction in a single open-source spec.
-2. Create concrete PRD and test-spec artifacts for the first replayable slice.
-3. Build the smallest convincing offline replay before any live OpenClaw hook work.
-4. Leave a clean spec seam for the future `prompt + examples => flow => playable eval` skill.
+1. Freeze the phase split clearly.
+2. Build the smallest convincing phase 1 runtime decision flow.
+3. Keep phase 2 graph construction UX planned but not blocking.
 
 ---
 
@@ -51,53 +40,51 @@ Where:
 - [x] Add `AGENTS.md`
 - [x] Add repo-level `PLAN.md`
 - [x] Add `.agents/` scaffold and exec-plan template
-- [x] Seed the first task plan for repo bootstrap
+- [x] Push the initial public repo
 
-### Milestone 1 — Lock the product spec
-- [x] Write a crisp product / scope statement
-- [x] Create a consolidated spec for the first demo
-- [x] Run deep-interview to clarify the demo surface
-- [x] Choose ralplan as the next lane
+### Milestone 1 — Lock the product shape
+- [x] Create the consolidated product spec
+- [x] Create `WORKING-SPEC.md` as shared artifact format
+- [x] Clarify that phase 1 is runtime decision flow
+- [x] Clarify that phase 2 is graph construction UX
 
-### Milestone 2 — Offline replay prototype
-- [ ] Write the scripted transcript that produces the graph
-- [ ] Define the v1 `@fbp/types` graph artifact
-- [ ] Define the gate-pack reference contract
-- [ ] Define the synthetic example set
-- [ ] Implement prompt-bank scoring + feature extraction
-- [ ] Train and evaluate the first LightGBM gate
-- [ ] Produce a replay UI with visible sensors and routes
+### Milestone 2 — Phase 1 runtime decision flow
+- [ ] Define the smallest `@fbp/types` decision graph
+- [ ] Define the gate node contract with explicit route ports
+- [ ] Define the external gate-pack contract
+- [ ] Define the deterministic route policy
+- [ ] Write a synthetic example set
+- [ ] Build replay + route UI
+- [ ] Show one `ALLOW` and one `REQUEST_APPROVAL` path end-to-end
 
-### Milestone 3 — Future follow-ons
-- [ ] Spec the future `prompt + examples => flow => playable eval` skill in more detail
-- [ ] Plan live OpenClaw integration after replay works
+### Milestone 3 — Phase 2 graph construction UX
+- [ ] Define how graph-as-node composition appears in Flow World
+- [ ] Reuse the existing FBP graph editor/editor UX where practical
+- [ ] Support reusable subgraphs as nodes
 
 ---
 
 ## Active / known plans
 
-- `.agents/plans/bootstrap/PLAN.md` — repo scaffold + workflow bootstrap
-- `.agents/plans/tool-gating-spec/PLAN.md` — consolidated OSS spec for the first Flow World demo
-- `.omx/specs/deep-interview-tool-gating-demo.md` — latest clarified execution brief
-- `plans/prd-flow-world-scripted-transcript-graph-replay-v1.md` — current PRD target
-- `plans/test-spec-flow-world-scripted-transcript-graph-replay-v1.md` — current test spec target
+- `.agents/plans/bootstrap/PLAN.md`
+- `.agents/plans/tool-gating-spec/PLAN.md`
+- `plans/prd-flow-world-runtime-decision-flow-v1.md`
+- `plans/test-spec-flow-world-runtime-decision-flow-v1.md`
 
 ---
 
 ## Open questions
 
-- What is the smallest exact gate-pack reference shape inside the graph?
-- Which minimal `@fbp/types` subset is enough for the first demo?
-- Which implementation stack should render the transcript / graph / replay screens fastest?
-- How much explanatory detail belongs in the replay inspector by default?
+- What exact minimal `@fbp/types` subset is enough for phase 1?
+- What should the deterministic route policy artifact look like?
+- Should phase 1 use a simple graph renderer or adapt editor components immediately?
 
 ---
 
 ## Working conventions
 
-- Repo-level strategy lives here.
-- Task-level execution lives in `.agents/plans/.../PLAN.md`.
-- `SPEC.md` is the canonical consolidated product / architecture spec.
-- Deep-interview artifacts in `.omx/specs/` override older ambiguous assumptions.
-- Use beads when work becomes multi-session or dependency-heavy.
-- Keep this document short and current.
+- `SPEC.md` = narrative product/architecture spec
+- `WORKING-SPEC.md` = shared implementation artifact format
+- `plans/` = planning artifacts we execute against
+- Phase 1 runtime flow should stay small and legible
+- Phase 2 authoring UX should build on native graph composition rather than replacing it

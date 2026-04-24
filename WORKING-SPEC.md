@@ -1,39 +1,40 @@
 # WORKING-SPEC
 
-A shared working format for Flow World so the project can be read, discussed, and implemented without relying on chat history.
+A shared format for reading, discussing, and implementing Flow World without relying on chat history.
 
-## 1. Core idea
+## 1. The project has two phases
 
-Flow World has four first-class artifact types:
+## Phase 1 — Runtime decision flow
 
-1. **Transcript** — how the workflow was asked for
-2. **Graph** — the public flow IR (`@fbp/types`)
-3. **Gate pack** — the external prompt/eval asset used by a gate node
-4. **Replay / eval artifacts** — examples, outputs, routes, and metrics
+This is the first thing we are building.
 
-If an idea cannot be expressed across those four layers, it is not ready.
+It answers:
+
+> What happens when a tool call enters a visible operational decision flow?
+
+Core loop:
+
+`tool proposal -> graph -> gate pack -> route -> branch`
+
+## Phase 2 — Graph construction UX
+
+This comes next.
+
+It answers:
+
+> How do users or agents build, edit, and compose those flows?
+
+Core loop:
+
+`author flow -> nest subgraphs -> reuse graphs as nodes -> replay`
 
 ---
 
-## 2. Canonical artifacts
+## 2. Canonical artifact types
 
-### A. Transcript
+### A. Graph
 Path:
-- `examples/<demo>/transcript.md`
-
-Purpose:
-- explain where the graph came from
-- provide a human-readable authoring story
-
-Minimum contents:
-- user asks
-- agent clarifies
-- agent proposes graph/gates
-- final graph-authoring turn
-
-### B. Graph
-Path:
-- `graphs/<demo>.json`
+- `graphs/<flow>.json`
 
 Purpose:
 - canonical public workflow representation
@@ -41,35 +42,36 @@ Purpose:
 Format:
 - `@fbp/types`
 
-Rule:
-- gate nodes reference packs; they do not inline packs
+Rules:
+- this is the real public IR
+- gate nodes reference packs
+- route branches are expressed as graph outputs / ports
+- phase 2 should support graph-as-node composition naturally
 
-### C. Gate pack
+### B. Gate pack
 Paths:
 - `prompt-packs/<pack-id>/pack.md`
 - `prompt-packs/<pack-id>/schema.json`
-- `prompt-packs/<pack-id>/inventory.csv`
-- optionally `prompt-packs/<pack-id>/routes.json`
+- optionally `prompt-packs/<pack-id>/inventory.csv`
 
 Purpose:
-- define the typed evaluator behind one gate family
+- define the typed evaluator behind a gate node
 
 Minimum contents:
 - `pack_id`
 - `pack_version`
+- `prompt_schema_version`
+- `feature_schema_version`
+- `provider_model`
 - sensor definitions
-- choice-family definitions
-- score-family definitions
-- output schema version
-- feature schema version
-- route labels
+- route-relevant outputs
 
-### D. Example set
+### C. Example set
 Path:
-- `examples/<demo>/examples.jsonl`
+- `examples/<flow>/examples.jsonl`
 
 Purpose:
-- define replayable candidate actions with expected routes
+- define replayable candidate tool actions and expected routes
 
 Minimum fields:
 - `example_id`
@@ -79,108 +81,145 @@ Minimum fields:
 - `expected_route`
 - `notes`
 
-### E. Replay artifact
+### D. Replay artifact
 Path:
-- `reports/replay-evals/<demo>.json`
+- `reports/replay-evals/<flow>.json`
 
 Purpose:
-- capture what happened when examples were replayed
+- capture what happened when examples were run through the flow
 
 Minimum fields:
 - `example_id`
+- `gate_id`
 - `pack_id`
 - `pack_version`
-- `model`
-- `prompt_outputs`
-- `features`
+- `gate_outputs`
 - `predicted_route`
 - `expected_route`
 - `match`
+
+### E. Policy artifact
+Optional path:
+- `policies/<policy-id>.json`
+
+Purpose:
+- define the deterministic route policy used in phase 1
 
 ---
 
 ## 3. Gate node contract
 
-A gate node in the graph should contain only the minimum routing contract needed by the graph layer.
+A gate node should contain only the routing contract needed by the graph.
 
-Suggested node props:
+Required props:
 - `gate_id`
-- `gate_kind`
 - `pack_ref`
-- `route_set`
+- `policy_ref`
+- `route_ports`
 - `fallback_route`
+
+Required ports:
+- one input for the normalized action document
+- one output port for each route
 
 Example:
 
 ```json
 {
-  "name": "tool_risk_gate",
-  "type": "flow/gate/tool-risk",
+  "name": "tool_approval_gate",
+  "type": "flow/gate/tool-approval",
   "props": [
-    { "name": "gate_id", "type": "string", "value": "tool-risk-v1" },
-    { "name": "pack_ref", "type": "string", "value": "prompt-packs/tool-gating-v1" },
-    { "name": "route_set", "type": "string[]", "value": ["ALLOW", "SANDBOX", "REQUEST_SUDO", "REVIEW", "DENY"] },
+    { "name": "gate_id", "type": "string", "value": "tool-approval-v1" },
+    { "name": "pack_ref", "type": "string", "value": "prompt-packs/tool-approval-v1" },
+    { "name": "policy_ref", "type": "string", "value": "policies/tool-approval-v1" },
+    { "name": "route_ports", "type": "string[]", "value": ["ALLOW", "SANDBOX", "REQUEST_APPROVAL", "REVIEW", "DENY"] },
     { "name": "fallback_route", "type": "string", "value": "REVIEW" }
   ]
 }
 ```
 
 Rule:
-- the graph says **which pack to use**
-- the pack says **how to evaluate**
+- graph = where the decision happens
+- pack = how the gate evaluates
+- policy = how the route is chosen
 
 ---
 
-## 4. Pack emergence process
+## 4. Phase 1 working loop
 
-A pack should emerge in six steps:
+Phase 1 is complete when this loop is real:
 
-1. **Need identified** in conversation or planning
-2. **Gate added** to graph with a stable `pack_ref`
-3. **Pack scaffold generated** from gate intent
-4. **Examples authored** against the gate
-5. **Eval run** to produce outputs + routes
-6. **Pack version promoted** if behavior is acceptable
+1. load graph
+2. load pack
+3. load policy
+4. replay example action document
+5. compute gate outputs
+6. choose route
+7. show branch taken
 
-This means packs are born from:
-- gate intent
-- examples
-- eval results
-
-not from isolated prompt hacking.
+That is the minimum complete story.
 
 ---
 
-## 5. Shared review checklist
+## 5. Phase 2 working loop
 
-Before changing a Flow World design, ask:
+Phase 2 is complete when this loop is real:
 
-- What transcript produced this graph?
+1. edit or create graph visually
+2. package a subgraph as a reusable node
+3. use that node inside another graph
+4. replay through the composed graph
+
+This should lean on the native graph-as-node / subgraph support from the FBP graph model instead of inventing a custom nesting layer.
+
+---
+
+## 6. Pack emergence process
+
+A pack emerges like this:
+
+1. identify the gate need
+2. create the gate node in the graph
+3. scaffold the external pack
+4. write examples against that gate
+5. run replay/eval
+6. promote the pack version
+
+The graph references the pack.
+The examples challenge the pack.
+The replay artifact proves what happened.
+
+---
+
+## 7. Shared review checklist
+
+Before changing the system, ask:
+
 - Is the graph valid `@fbp/types`?
 - Does the gate node reference a pack instead of inlining one?
+- Are route ports explicit?
 - What examples define expected behavior?
-- What replay artifact proves the gate behaves correctly?
-- What changed: graph, pack, examples, or route mapping?
+- What replay artifact proves the current behavior?
+- Is this change about phase 1 runtime flow or phase 2 authoring UX?
 
 ---
 
-## 6. Frontend stance
+## 8. Frontend stance
 
-Default plan:
-- reuse or adapt `@fbp/graph-editor` for graph rendering if practical
-- keep Flow World-specific UI focused on:
-  - transcript view
-  - gate inspector
-  - replay route inspector
+### Phase 1
+Use a simple runtime decision-flow UI.
+Prefer a read-oriented graph view over a full editor.
 
-That avoids rebuilding a graph editor from scratch while keeping the project focused on gate behavior.
+### Phase 2
+Lean on the existing graph editor UX and its graph-as-node support.
+Do not rebuild subgraph composition from scratch if the existing ecosystem already solves it well.
 
 ---
 
-## 7. What v1 is
+## 9. What v1 is now
 
 For v1, the shared working loop is:
 
-`scripted transcript -> @fbp/types graph -> referenced gate pack -> synthetic examples -> replay/eval -> visible route`
+`tool proposal -> @fbp/types decision graph -> referenced gate pack -> deterministic route policy -> visible branch`
 
 That is the minimum complete Flow World story.
